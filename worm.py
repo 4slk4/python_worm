@@ -201,7 +201,7 @@ if len(sys.argv) < 3:
 
 		#If option -m selected
 		if multiple:
-			networkHosts.append(getHostsOnTheSameNetwork("10.20.22.128/25")
+			networkHosts.append(getHostsOnTheSameNetwork("10.20.22.128/25"))
 
 		#Remove the IP of the current system
 		#from the list of discovered systems (We do not want to target ourselves!).
